@@ -6,7 +6,6 @@
 
 このファイルはClaude Codeへの開発指示書である。
 実装判断に迷ったらここに戻ること。
-返答は日本語で行なってください。
 
 ---
 
@@ -33,25 +32,39 @@
 ## 2. 技術スタック
 
 ```
-Tanstack Start + Vite
+TanStack Start (フルスタックフレームワーク)
+TanStack Router (ファイルベースルーティング)
+Vite (ビルドツール)
 Three.js + EffectComposer
 MDX（作品データソース）
 TypeScript
 ```
+
+### Vite設定メモ
+
+- GLSLファイルのimportには `vite-plugin-glsl` を使用
+- MDXには `@mdx-js/rollup` を使用
+- Three.jsはtree-shakingが効くようnamed importを徹底
 
 ### 禁止事項
 
 - R3F（React Three Fiber）は使わない。素のThree.jsで書く
 - 外部UIライブラリ（MUI, Chakra等）は使わない
 - GLSLは直接書く。TSL変換は行わない
+- Next.js由来のAPI（`next/image`, `next/link`等）は使わない
 
 ---
 
 ## 3. データフロー
 
 ```
-MDX frontmatter → パース → 作品データ配列 → 3D空間に配置 → shader uniform反映
+MDX frontmatter → Viteビルド時にパース → loader経由で取得 → 3D空間に配置 → shader uniform反映
 ```
+
+### データ取得パターン
+
+- **作品一覧**: route loaderでビルド時にMDX frontmatterを全件取得
+- **作品詳細**: `$slug` パラメータからMDXコンテンツを動的import
 
 ### MDX frontmatter 仕様
 
@@ -144,31 +157,247 @@ lerpで0.15秒かけて遷移
 
 ## 6. ポストプロセス
 
-EffectComposerで以下3つのみ使用。追加禁止。
+Three.js 組み込みの EffectComposer（`three/addons/postprocessing/`）を使用する。
+pmndrs/postprocessing ライブラリは使わない。
 
-### 6.1 Bloom（注目）
+使用するパスは **RenderPass → UnrealBloomPass → BokehPass → カスタム FogPass → OutputPass** の5つ。
+この順序は固定。追加のパスは禁止。
 
-```
-対象: importance > 0.6 の建物のみ
-強度: 夜間で1.5倍
-threshold: 0.8
-radius: 0.4
+### 6.0 セットアップ — import と初期化
+
+```ts
+// PostProcess.ts
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { BokehPass } from 'three/addons/postprocessing/BokehPass.js';
+import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 ```
 
-### 6.2 DOF — 被写界深度（意識）
+**IMPORTANT: パスの追加順序**
 
-```
-焦点: カメラが向いている建物
-遠景: ぼかす
+```ts
+const composer = new EffectComposer(renderer);
+composer.setPixelRatio(renderer.getPixelRatio());  // HiDPI対応 — 忘れるとぼやける
+composer.setSize(width, height);
+
+// 1. RenderPass — 必ず最初。シーンの素の描画結果を次のパスに渡す
+composer.addPass(new RenderPass(scene, camera));
+
+// 2. UnrealBloomPass — 重要な建物を光らせる
+composer.addPass(bloomPass);
+
+// 3. BokehPass — 被写界深度
+composer.addPass(bokehPass);
+
+// 4. カスタム FogPass — ShaderPassで実装
+composer.addPass(fogPass);
+
+// 5. OutputPass — 必ず最後。sRGB変換 + トーンマッピングを担当
+composer.addPass(new OutputPass());
 ```
 
-### 6.3 Fog（記憶 / 忘却）
+**OutputPass は必ずチェインの最後に置くこと。**
+これがないと色空間がリニアのまま出力され、画面が白飛びする。
 
+### 6.1 Bloom — UnrealBloomPass（注目）
+
+```ts
+const bloomPass = new UnrealBloomPass(
+  new THREE.Vector2(width, height),  // resolution
+  0.8,   // strength（初期値。夜間は動的に変更）
+  0.4,   // radius [0, 1]
+  0.85   // threshold — これ以上の輝度のピクセルだけ光る
+);
+composer.addPass(bloomPass);
 ```
-near: 10
-far: 100
-color: 昼→白系 / 夜→暗青系（uTimeに連動）
+
+**意味との対応:**
+- 建物の ShaderMaterial で `emissive` を設定し、`uImportance > 0.6` の建物だけ threshold を超える輝度にする
+- importance ≤ 0.6 の建物は emissive を低く保ち、Bloom の対象外にする
+- 夜間（uTime < 0.2 || uTime > 0.8）は `bloomPass.strength` を 1.2 に動的変更
+
+```ts
+// アニメーションループ内
+bloomPass.strength = isNight(uTime) ? 1.2 : 0.8;
 ```
+
+**パラメータ調整の目安:**
+- strength を上げすぎると画面全体が白く飛ぶ → 最大 1.5 を上限とする
+- threshold を下げすぎると全オブジェクトが光る → 0.7 未満にしない
+- radius を上げると光が広がる → 0.5 を超えるとぼんやりしすぎる
+
+### 6.2 DOF — BokehPass（意識）
+
+```ts
+const bokehPass = new BokehPass(scene, camera, {
+  focus: 50.0,      // 焦点距離（カメラからの距離）
+  aperture: 0.002,  // 絞り（小さいほどボケが少ない）
+  maxblur: 0.01     // 最大ブラー量
+});
+composer.addPass(bokehPass);
+```
+
+**意味との対応:**
+- focus をカメラが向いている建物までの距離に動的更新 → 「見ているものだけ鮮明」
+- Raycaster でホバー中の建物を検出し、その距離を focus に反映
+
+```ts
+// アニメーションループ内
+if (hoveredBuilding) {
+  const dist = camera.position.distanceTo(hoveredBuilding.position);
+  bokehPass.uniforms['focus'].value = dist;
+}
+```
+
+**パラメータ調整の目安:**
+- aperture が大きすぎるとすべてがボケる → 0.005 を上限とする
+- maxblur が大きすぎると描画が崩れる → 0.02 を上限とする
+- focus をフレームごとに急変させるとちらつく → lerp で 0.1 秒かけて遷移
+
+### 6.3 Fog — カスタム ShaderPass（記憶 / 忘却）
+
+Three.js の `Scene.fog` ではなく、ShaderPass で実装する。
+理由: Bloom 適用後の画像に対して Fog をかけたいため（Scene.fog だと Bloom 前に適用されてしまう）。
+
+```ts
+const fogShader = {
+  uniforms: {
+    tDiffuse: { value: null },       // 前のパスの出力（自動注入）
+    tDepth: { value: depthTexture },  // 深度テクスチャ
+    uFogColor: { value: new THREE.Color(0x0a0a1a) },
+    uFogNear: { value: 10.0 },
+    uFogFar: { value: 100.0 },
+    uTime: { value: 0.0 }
+  },
+  vertexShader: /* glsl */`
+    varying vec2 vUv;
+    void main() {
+      vUv = uv;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  `,
+  fragmentShader: /* glsl */`
+    uniform sampler2D tDiffuse;
+    uniform sampler2D tDepth;
+    uniform vec3 uFogColor;
+    uniform float uFogNear;
+    uniform float uFogFar;
+    uniform float uTime;
+    varying vec2 vUv;
+
+    void main() {
+      vec4 color = texture2D(tDiffuse, vUv);
+      float depth = texture2D(tDepth, vUv).r;
+      float fogFactor = smoothstep(uFogNear, uFogFar, depth);
+
+      // 昼→白系 / 夜→暗青系
+      vec3 dayFog = vec3(0.9, 0.9, 0.95);
+      vec3 nightFog = vec3(0.04, 0.04, 0.1);
+      vec3 currentFog = mix(nightFog, dayFog, smoothstep(0.2, 0.5, uTime));
+
+      gl_FragColor = vec4(mix(color.rgb, currentFog, fogFactor), color.a);
+    }
+  `
+};
+
+const fogPass = new ShaderPass(fogShader);
+composer.addPass(fogPass);
+```
+
+**アニメーションループ内で uTime を更新:**
+
+```ts
+fogPass.uniforms['uTime'].value = uTime;
+```
+
+### 6.4 リサイズ対応
+
+**ウィンドウリサイズ時に composer と各パスのサイズを更新すること。**
+これを忘れるとリサイズ後に描画がぼやける / ずれる。
+
+```ts
+window.addEventListener('resize', () => {
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+
+  renderer.setSize(w, h);
+  composer.setSize(w, h);  // IMPORTANT: これを忘れない
+
+  // UnrealBloomPass の resolution も更新
+  bloomPass.resolution.set(w, h);
+});
+```
+
+### 6.5 アニメーションループ
+
+```ts
+function animate() {
+  requestAnimationFrame(animate);
+
+  // renderer.render(scene, camera) は呼ばない
+  // EffectComposer が内部で RenderPass 経由で render する
+  composer.render();
+}
+```
+
+**IMPORTANT: `renderer.render()` と `composer.render()` を両方呼ばない。**
+二重描画になり FPS が半減する。
+
+### 6.6 dispose
+
+ページ遷移時にポストプロセスのリソースも解放する。
+
+```ts
+function disposePostProcess(composer: EffectComposer) {
+  // EffectComposer.dispose() が各パスの dispose を呼ぶ
+  composer.dispose();
+}
+```
+
+### 6.7 モバイル分岐
+
+```ts
+import { isMobile } from '../lib/device';
+
+function createPostProcess(renderer, scene, camera) {
+  const composer = new EffectComposer(renderer);
+  composer.addPass(new RenderPass(scene, camera));
+
+  if (!isMobile()) {
+    // デスクトップのみ: Bloom + DOF + Fog
+    composer.addPass(bloomPass);
+    composer.addPass(bokehPass);
+    composer.addPass(fogPass);
+  }
+  // Scene.fog をフォールバックとして設定（モバイル用）
+  if (isMobile()) {
+    scene.fog = new THREE.Fog(0x0a0a1a, 10, 100);
+  }
+
+  composer.addPass(new OutputPass());
+  return composer;
+}
+```
+
+**モバイルでは Bloom, DOF, FogPass を全スキップ。**
+代わりに Scene.fog（GPU負荷が低い）だけ適用する。
+
+### 6.8 よくあるバグと対処
+
+| 症状 | 原因 | 対処 |
+|---|---|---|
+| 画面が真っ白 | OutputPass がない / threshold が低すぎ | OutputPass を最後に追加。threshold ≥ 0.7 |
+| 画面がぼやける | composer.setPixelRatio 未設定 | `composer.setPixelRatio(renderer.getPixelRatio())` |
+| リサイズ後に崩れる | composer.setSize 未呼出 | resize イベントで composer.setSize を呼ぶ |
+| FPS が極端に低い | renderer.render と composer.render を二重呼び | composer.render のみにする |
+| Bloom が全体に広がる | emissive が全建物で高い | importance ≤ 0.6 の建物は emissive を threshold 以下に |
+| DOF がちらつく | focus を毎フレーム急変 | lerp で補間（0.1秒） |
+| Fog の色が変わらない | uTime 更新忘れ | ループ内で fogPass.uniforms.uTime.value を更新 |
 
 ---
 
@@ -230,11 +459,15 @@ experimental > 0.5: 面の一部を削除 or 変形
 
 3Dが動作しない環境・ユーザー向けに2D一覧ページを必ず用意する。
 
+### ルーティング（TanStack Router ファイルベース）
+
 ```
-/works       → 3D都市ビュー
-/works/list  → 2Dカード一覧（フォールバック）
-/works/[slug] → MDX作品詳細
+/works         → 3D都市ビュー (routes/works/index.tsx)
+/works/list    → 2Dカード一覧・フォールバック (routes/works/list.tsx)
+/works/$slug   → MDX作品詳細 (routes/works/$slug.tsx)
 ```
+
+注意: TanStack Routerは `$param` 記法。Next.jsの `[param]` ではない。
 
 ### UI補助
 
@@ -246,31 +479,47 @@ experimental > 0.5: 面の一部を削除 or 変形
 ## 11. ファイル構成（想定）
 
 ```
-src/
-├── app/
-│   ├── works/
-│   │   ├── page.tsx          # 3D都市ビュー
-│   │   ├── list/page.tsx     # 2Dフォールバック
-│   │   └── [slug]/page.tsx   # MDX作品詳細
+app/
+├── routes/
+│   ├── __root.tsx            # ルートレイアウト
+│   ├── index.tsx             # トップ（都市へのエントリー）
+│   └── works/
+│       ├── index.tsx         # 3D都市ビュー（loader で全作品取得）
+│       ├── list.tsx          # 2Dフォールバック
+│       └── $slug.tsx         # MDX作品詳細（loader で個別取得）
 ├── components/
 │   ├── city/
-│   │   ├── CityScene.ts      # Three.jsシーン初期化
-│   │   ├── Building.ts       # 建物クラス
-│   │   ├── Sky.ts            # 空の描画
-│   │   └── PostProcess.ts    # EffectComposer設定
+│   │   ├── CityScene.ts     # Three.jsシーン初期化・破棄
+│   │   ├── Building.ts      # 建物クラス
+│   │   ├── Sky.ts           # 空の描画
+│   │   └── PostProcess.ts   # EffectComposer設定
 │   └── ui/
-│       ├── Guide.tsx         # 操作ガイド
+│       ├── Guide.tsx        # 操作ガイド
 │       └── Legend.tsx        # 色・光の凡例
 ├── shaders/
-│   ├── building.vert
+│   ├── building.vert        # vite-plugin-glslでimport
 │   ├── building.frag
 │   └── sky.frag
 ├── lib/
-│   ├── parseWorks.ts         # MDX frontmatter → 作品データ配列
-│   ├── layout.ts             # クラスタリング・配置計算
-│   └── device.ts             # デバイス判定・パフォーマンス分岐
-└── content/
-    └── works/                # MDXファイル群
+│   ├── works.ts             # MDX frontmatter パース・全件取得
+│   ├── layout.ts            # クラスタリング・配置計算
+│   └── device.ts            # デバイス判定・パフォーマンス分岐
+├── content/
+│   └── works/               # MDXファイル群
+├── app.config.ts             # TanStack Start設定
+└── vite.config.ts            # Vite設定（glsl, mdxプラグイン）
+```
+
+### Three.jsのライフサイクル管理
+
+TanStack Routerはクライアントサイドナビゲーション。
+ページ遷移時にThree.jsシーンが破棄されない問題に注意。
+
+```
+対策:
+- CityScene.tsにdispose()メソッドを必ず実装
+- route離脱時（useEffect cleanup / onLeave）で確実に呼ぶ
+- renderer, geometry, material, textureすべてdispose
 ```
 
 ---
@@ -281,10 +530,12 @@ Phase 1から順に進める。各Phaseが動作確認できてから次へ。
 
 ### Phase 1: 最小構成
 
-- [ ] MDXパース → 作品データ配列
+- [ ] TanStack Start + Viteプロジェクト初期化
+- [ ] vite.config.ts に vite-plugin-glsl, @mdx-js/rollup を追加
+- [ ] MDXパース → route loaderで作品データ配列を取得
 - [ ] BoxGeometryの建物をグリッド配置
 - [ ] カメラ移動（WASD or スクロール）
-- [ ] クリックでMDXページ遷移
+- [ ] クリック → `router.navigate({ to: '/works/$slug' })` で遷移
 
 ### Phase 2: 意味レイヤー
 
