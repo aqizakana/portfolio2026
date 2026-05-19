@@ -104,8 +104,6 @@ function PhotoPage() {
   }, []);
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
 
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "auto";
