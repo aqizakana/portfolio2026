@@ -14,6 +14,9 @@ export default defineConfig({
     }),
     tanstackStart({
       srcDirectory: "app",
+      spa: {
+        enabled: true,
+      },
     }),
     viteReact(),
   ],
