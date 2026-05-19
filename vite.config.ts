@@ -5,6 +5,7 @@ import mdx from "@mdx-js/rollup";
 import remarkFrontmatter from "remark-frontmatter";
 import remarkMdxFrontmatter from "remark-mdx-frontmatter";
 import glsl from "vite-plugin-glsl";
+import { nitro } from 'nitro/vite'
 
 export default defineConfig({
   plugins: [
@@ -19,5 +20,6 @@ export default defineConfig({
       },
     }),
     viteReact(),
+    nitro(),
   ],
 });
