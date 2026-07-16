@@ -1,21 +1,21 @@
-//#region node_modules/.nitro/vite/services/ssr/assets/_tanstack-start-manifest_v-B8bIILlr.js
+//#region node_modules/.nitro/vite/services/ssr/assets/_tanstack-start-manifest_v-HgqPZYqn.js
 var tsrStartManifest = () => ({
 	"routes": {
 		"__root__": {
 			"filePath": "/Users/shinnosukeuota/works/portfolio2026/app/routes/__root.tsx",
 			"children": ["/", "/photo/"],
-			"preloads": ["/assets/main-Bqa2Qvbq.js", "/assets/jsx-runtime-BnxRlLMJ.js"]
+			"preloads": ["/assets/main-BjVeQ8Vy.js", "/assets/jsx-runtime-BnxRlLMJ.js"]
 		},
 		"/": {
 			"filePath": "/Users/shinnosukeuota/works/portfolio2026/app/routes/index.tsx",
-			"preloads": ["/assets/routes-DCbSXVM_.js"]
+			"preloads": ["/assets/routes-CB6qXohF.js"]
 		},
 		"/photo/": {
 			"filePath": "/Users/shinnosukeuota/works/portfolio2026/app/routes/photo/index.tsx",
-			"preloads": ["/assets/photo-z9CRNlxE.js"]
+			"preloads": ["/assets/photo-fiRPb3K8.js"]
 		}
 	},
-	"clientEntry": "/assets/main-Bqa2Qvbq.js"
+	"clientEntry": "/assets/main-BjVeQ8Vy.js"
 });
 //#endregion
 export { tsrStartManifest };

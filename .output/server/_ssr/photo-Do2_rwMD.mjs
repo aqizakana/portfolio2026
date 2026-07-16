@@ -1,7 +1,7 @@
 import { r as __toESM } from "../_runtime.mjs";
 import { d as require_jsx_runtime, f as require_react } from "../_libs/@tanstack/react-router+[...].mjs";
 import { n as gsapWithCSS, t as ScrollTrigger } from "../_libs/gsap.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/photo-DrOuxrsn.js
+//#region node_modules/.nitro/vite/services/ssr/assets/photo-Do2_rwMD.js
 var import_react = /* @__PURE__ */ __toESM(require_react());
 var import_jsx_runtime = require_jsx_runtime();
 var SDIM4860_DxO_default = "/assets/SDIM4860_DxO-sbTubBWn.jpg";
@@ -18,6 +18,14 @@ var SDIM5975_DxO_default = "/assets/SDIM5975_DxO-D5cG1SYj.jpg";
 var SDIM5990_DxO_default = "/assets/SDIM5990_DxO-DquLY1Q4.jpg";
 var SDIM5997_DxO_default = "/assets/SDIM5997_DxO-Dsm2Lf2w.jpg";
 var SDIM6006_DxO_default = "/assets/SDIM6006_DxO-ChzcH3Iy.jpg";
+var SDIM7099_DxO_default = "/assets/SDIM7099_DxO-CxPrWelY.jpg";
+var SDIM7101_DxO_default = "/assets/SDIM7101_DxO-IeQEvQ5Y.jpg";
+var SDIM7102_DxO_default = "/assets/SDIM7102_DxO-DHWgw9xT.jpg";
+var SDIM7106_DxO_default = "/assets/SDIM7106_DxO-ivyNtxnX.jpg";
+var SDIM7109_DxO_default = "/assets/SDIM7109_DxO-BvVIbRsM.jpg";
+var SDIM7112_DxO_default = "/assets/SDIM7112_DxO-CYJPJbHZ.jpg";
+var SDIM7115_DxO_default = "/assets/SDIM7115_DxO-BQh3UCgV.jpg";
+var SDIM7125_DxO_default = "/assets/SDIM7125_DxO-VUMzDjx7.jpg";
 var SDIM5730_DxO_default = "/assets/SDIM5730_DxO-BpbXas_E.jpg";
 var SDIM5758_DxO_default = "/assets/SDIM5758_DxO-ChoE-6-m.jpg";
 var SDIM5775_DxO_default = "/assets/SDIM5775_DxO-DHcQq8ah.jpg";
@@ -103,6 +111,14 @@ var cameraModules = /* @__PURE__ */ Object.assign({
 	"../../assets/img/camera/ginza/SDIM5990_DxO.jpg": SDIM5990_DxO_default,
 	"../../assets/img/camera/ginza/SDIM5997_DxO.jpg": SDIM5997_DxO_default,
 	"../../assets/img/camera/ginza/SDIM6006_DxO.jpg": SDIM6006_DxO_default,
+	"../../assets/img/camera/iso6/SDIM7099_DxO.jpg": SDIM7099_DxO_default,
+	"../../assets/img/camera/iso6/SDIM7101_DxO.jpg": SDIM7101_DxO_default,
+	"../../assets/img/camera/iso6/SDIM7102_DxO.jpg": SDIM7102_DxO_default,
+	"../../assets/img/camera/iso6/SDIM7106_DxO.jpg": SDIM7106_DxO_default,
+	"../../assets/img/camera/iso6/SDIM7109_DxO.jpg": SDIM7109_DxO_default,
+	"../../assets/img/camera/iso6/SDIM7112_DxO.jpg": SDIM7112_DxO_default,
+	"../../assets/img/camera/iso6/SDIM7115_DxO.jpg": SDIM7115_DxO_default,
+	"../../assets/img/camera/iso6/SDIM7125_DxO.jpg": SDIM7125_DxO_default,
 	"../../assets/img/camera/kanazawa/SDIM5730_DxO.jpg": SDIM5730_DxO_default,
 	"../../assets/img/camera/kanazawa/SDIM5758_DxO.jpg": SDIM5758_DxO_default,
 	"../../assets/img/camera/kanazawa/SDIM5775_DxO.jpg": SDIM5775_DxO_default,
