@@ -1,6 +1,6 @@
 import { a as createRouter, c as createFileRoute, d as require_jsx_runtime, l as createRootRoute, n as Scripts, o as Outlet, r as HeadContent, s as lazyRouteComponent } from "../_libs/@tanstack/react-router+[...].mjs";
 import { n as gsapWithCSS, t as ScrollTrigger } from "../_libs/gsap.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/router-K4niHJRS.js
+//#region node_modules/.nitro/vite/services/ssr/assets/router-ndl2pFlH.js
 var import_jsx_runtime = require_jsx_runtime();
 var Route$2 = createRootRoute({
 	head: () => ({
@@ -30,7 +30,7 @@ function RootDocument({ children }) {
 }
 var $$splitComponentImporter$1 = () => import("./routes-DIHLlalq.mjs");
 var Route$1 = createFileRoute("/")({ component: lazyRouteComponent($$splitComponentImporter$1, "component") });
-var $$splitComponentImporter = () => import("./photo-D2oSyhSI.mjs");
+var $$splitComponentImporter = () => import("./photo-DrOuxrsn.mjs");
 gsapWithCSS.registerPlugin(ScrollTrigger);
 var Route = createFileRoute("/photo/")({ component: lazyRouteComponent($$splitComponentImporter, "component") });
 ({
