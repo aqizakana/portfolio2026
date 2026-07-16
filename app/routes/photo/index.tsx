@@ -146,9 +146,6 @@ function PhotoPage() {
     >
       <header style={headerStyle}>
         <h1 style={titleStyle}>Photographs</h1>
-        <a   style={{
-        ...textLinkStyle,
-      }} href="https://www.instagram.com/nosuke_water/" target="_blank" rel="noopener noreferrer">Instagram</a>
       </header>
       <div
         style={{
