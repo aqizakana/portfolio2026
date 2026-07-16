@@ -1,7 +1,7 @@
 import { r as __toESM } from "../_runtime.mjs";
 import { d as require_jsx_runtime, f as require_react } from "../_libs/@tanstack/react-router+[...].mjs";
 import { n as gsapWithCSS, t as ScrollTrigger } from "../_libs/gsap.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/photo-Do2_rwMD.js
+//#region node_modules/.nitro/vite/services/ssr/assets/photo-DNa5ilcd.js
 var import_react = /* @__PURE__ */ __toESM(require_react());
 var import_jsx_runtime = require_jsx_runtime();
 var SDIM4860_DxO_default = "/assets/SDIM4860_DxO-sbTubBWn.jpg";
@@ -291,12 +291,18 @@ function PhotoPage() {
 			...pageStyle,
 			paddingBlock: columns < 3 ? "24px" : "56px"
 		},
-		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("header", {
+		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("header", {
 			style: headerStyle,
-			children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("h1", {
+			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h1", {
 				style: titleStyle,
 				children: "Photographs"
-			})
+			}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("a", {
+				style: { ...textLinkStyle },
+				href: "https://www.instagram.com/nosuke_water/",
+				target: "_blank",
+				rel: "noopener noreferrer",
+				children: "Instagram"
+			})]
 		}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
 			style: {
 				...gridStyle,
@@ -378,6 +384,13 @@ var captionStyle = {
 	fontSize: "0.78rem",
 	color: "#888",
 	letterSpacing: "0.05em"
+};
+var textLinkStyle = {
+	color: colors.black,
+	textDecoration: "none",
+	fontSize: "0.85rem",
+	marginTop: "2rem",
+	display: "inline-block"
 };
 //#endregion
 export { PhotoPage as component };
