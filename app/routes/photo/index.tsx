@@ -146,6 +146,9 @@ function PhotoPage() {
     >
       <header style={headerStyle}>
         <h1 style={titleStyle}>Photographs</h1>
+        <a   style={{
+        ...textLinkStyle,
+      }} href="https://www.instagram.com/nosuke_water/" target="_blank" rel="noopener noreferrer">Instagram</a>
       </header>
       <div
         style={{
@@ -171,6 +174,7 @@ function PhotoPage() {
           </figure>
         ))}
       </div>
+      
     </div>
   );
 }
@@ -241,4 +245,12 @@ const captionStyle: CSSProperties = {
   fontSize: "0.78rem",
   color: "#888",
   letterSpacing: "0.05em",
+};
+
+const textLinkStyle: CSSProperties = {
+  color: colors.black,
+  textDecoration: "none",
+  fontSize: "0.85rem",
+  marginTop: "2rem",
+  display: "inline-block",
 };
